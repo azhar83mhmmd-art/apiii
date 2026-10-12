@@ -16,7 +16,7 @@
 (function () {
     'use strict';
 
-    var WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029VbDCEVT7DAX19uJ8YQ3a';
+    var WHATSAPP_CHANNEL_URL = 'https://whatsapp.com/channel/0029Vb99yLaK0IBgYkp9KR2q';
     var CHANNEL_SEEN_KEY = 'kairoo_channel_verified';
 
     var hasStorage = (function () {
