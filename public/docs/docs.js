@@ -525,14 +525,14 @@ function renderIntro(config) {
         <div class="mb-5">
             <h2
                 class="font-black text-xl"
-                style="color:#F5F5F5"
+                style="color:#0A0A0A"
             >
                 Introduction
             </h2>
 
             <p
                 class="text-xs font-bold"
-                style="color:#5F5F5F"
+                style="color:#3A3A3A"
             >
                 Quick guide to using ${apiName}
             </p>
@@ -540,7 +540,7 @@ function renderIntro(config) {
 
         <p
             class="text-sm leading-relaxed font-semibold mb-6"
-            style="color:#6E7591"
+            style="color:#2B2B2B"
         >
             Welcome to the ${apiName} documentation.
             Open the menu in the top-left corner to browse
@@ -550,7 +550,7 @@ function renderIntro(config) {
 
         <h3
             class="font-black text-sm mb-2"
-            style="color:#F5F5F5"
+            style="color:#0A0A0A"
         >
             Example Usage
         </h3>
@@ -566,7 +566,7 @@ function renderIntro(config) {
 
         <h3
             class="font-black text-sm mb-2"
-            style="color:#F5F5F5"
+            style="color:#0A0A0A"
         >
             Response Format
         </h3>
@@ -623,7 +623,7 @@ function renderIntro(config) {
 
         <h3
             class="font-black text-sm mb-2 mt-6"
-            style="color:#F5F5F5"
+            style="color:#0A0A0A"
         >
             Status Codes
         </h3>
@@ -672,7 +672,7 @@ function buildSidebarTree(tags) {
     introBtn.innerHTML = `
         <div
             class="folder-icon"
-            style="background:linear-gradient(135deg,#8E7CF5,#5EC2E0)"
+            style="background:#4ADE80"
         >
             <i class="fa-solid fa-house"></i>
         </div>
@@ -895,12 +895,12 @@ function renderEndpointCard(route, id) {
                             <div>
                                 <label
                                     class="text-[11px] font-bold mb-1.5 block"
-                                    style="color:#6E7591"
+                                    style="color:#2B2B2B"
                                 >
                                     ${param.name}
                                     ${
                                         param.required
-                                            ? '<span style="color:#E2727E">*</span>'
+                                            ? '<span style="color:#DC2626">*</span>'
                                             : ""
                                     }
                                 </label>
@@ -944,7 +944,7 @@ function renderEndpointCard(route, id) {
             <div class="p-5">
                 <div
                     class="flex items-center gap-2 mb-3 text-[11px] font-bold"
-                    style="color:#8E7CF5"
+                    style="color:#15803D"
                 >
                     <i class="fa-solid fa-folder text-[10px]"></i>
                     <span>${route.cat}</span>
@@ -958,14 +958,14 @@ function renderEndpointCard(route, id) {
                     <div class="flex flex-col min-w-0">
                         <code
                             class="font-bold text-[13px] truncate"
-                            style="color:#F5F5F5"
+                            style="color:#0A0A0A"
                         >
                             ${route.endpoint}
                         </code>
 
                         <span
                             class="text-[11px] font-semibold truncate"
-                            style="color:#5F5F5F"
+                            style="color:#3A3A3A"
                         >
                             ${route.name}
                         </span>
@@ -977,7 +977,7 @@ function renderEndpointCard(route, id) {
 
             <div
                 class="px-5 pb-5 flex gap-3 items-center border-t pt-4"
-                style="border-color:rgba(163,177,198,.3)"
+                style="border-color:#0A0A0A"
             >
                 <button
                     id="btn-exec-${id}"
