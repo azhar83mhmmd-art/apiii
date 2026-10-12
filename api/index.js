@@ -78,13 +78,7 @@ module.exports = (req, res) => {
         return sendJson(res, 500, {
             status: false,
             message: 'Server gagal start (cold start crash).',
-            node: process.version,
-            error: {
-                name: bootError.name,
-                message: bootError.message,
-                code: bootError.code,
-                stack: String(bootError.stack || '').split('\n').slice(0, 12)
-            }
+            error: { name: bootError.name, message: bootError.message }
         });
     }
 
@@ -95,12 +89,7 @@ module.exports = (req, res) => {
         return sendJson(res, 500, {
             status: false,
             message: 'Error saat memproses request.',
-            node: process.version,
-            error: {
-                name: error && error.name,
-                message: error && error.message,
-                stack: String((error && error.stack) || '').split('\n').slice(0, 12)
-            }
+            error: { name: error && error.name, message: error && error.message }
         });
     }
 };
