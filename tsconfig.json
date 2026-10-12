@@ -13,6 +13,7 @@
   },
   "include": [
     "index.ts",
+    "app.ts",
     "src/**/*.ts",
     "router/**/*.ts"
   ],
