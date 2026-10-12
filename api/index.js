@@ -1,68 +1,95 @@
 /*
- * Entry point untuk Vercel Serverless Functions.
+ * Entry point Vercel Serverless Function (versi diagnostik).
  *
- * Kenapa lewat sini, bukan langsung index.ts?
- * Beberapa bagian project (autoload.ts) me-require file router secara
- * dinamis berdasarkan path yang dihitung saat runtime (bukan `import`
- * statis). Bundler Vercel (@vercel/node / nft) tidak bisa melacak
- * require dinamis semacam itu, dan runtime Node di Vercel juga tidak
- * bisa langsung require file .ts tanpa ts-node. Karena itu Vercel
- * HARUS menjalankan hasil build (dist/**, JS biasa) — bukan source TS
- * mentah — supaya semua router ikut ter-bundle dan bisa di-require
- * saat runtime. Lihat vercel.json ("buildCommand" + "includeFiles").
- *
- * File ini TIDAK memanggil app.listen() — index.ts hanya listen kalau
- * dijalankan sebagai entry point langsung (lihat require.main check di
- * index.ts). Express app di-export apa adanya; @vercel/node bisa
- * memanggil Express app langsung sebagai request handler (req, res).
+ * Perubahan dari versi sebelumnya:
+ * - dist/index.js di-require saat request PERTAMA (di dalam handler), bukan saat
+ *   file ini di-load, supaya kegagalan apa pun bisa dijawab dengan JSON berisi
+ *   pesan error aslinya dan tercatat di Runtime Logs.
+ * - Menangkap uncaughtException / unhandledRejection dan menuliskannya ke log
+ *   (crash async yang tadinya hanya tampil sebagai FUNCTION_INVOCATION_FAILED).
+ * - Mode diagnosa sementara:
+ *     /?__diag=1       info runtime (versi Node, platform, dist/public ada atau tidak)
+ *     /?__diag=canvas  mencoba memuat @napi-rs/canvas saja
+ *   Hapus blok "DIAGNOSA" ini setelah masalah ketemu.
  */
-/*
- * PENTING (bug FUNCTION_INVOCATION_FAILED di SEMUA route, termasuk "/"
- * dan "/favicon.ico"): sebelum ini, require('../dist/index.js') tidak
- * dibungkus apa pun. Kalau ADA saja satu modul yang throw saat di-load
- * (mis. dependency native/binary yang gagal ter-bundle dengan benar ke
- * Vercel Function, atau env var yang membuat sebuah client library
- * throw secara synchronous saat inisialisasi), exception itu terjadi
- * SEBELUM Express app sempat dibuat — sehingga @vercel/node tidak
- * punya request handler valid sama sekali dan Vercel menampilkan
- * halaman crash generik "500: INTERNAL_SERVER_ERROR /
- * FUNCTION_INVOCATION_FAILED" tanpa detail apa pun ke semua request,
- * dan detail errornya cuma bisa dilihat lewat Vercel Function Logs.
- *
- * Sekarang require() dibungkus try/catch. Kalau gagal, module ini tetap
- * meng-export sebuah Express-compatible handler (bukan crash saat
- * di-load), yang membalas 500 dengan pesan error ASLI-nya supaya bisa
- * langsung ketahuan penyebabnya dari response, tanpa harus bongkar
- * Vercel dashboard dulu.
- */
-let app;
+const fs = require('fs');
+const path = require('path');
+
+process.on('uncaughtException', (e) => console.error('[uncaughtException]', (e && e.stack) || e));
+process.on('unhandledRejection', (e) => console.error('[unhandledRejection]', (e && e.stack) || e));
+
+let app = null;
 let bootError = null;
 
-try {
-    app = require('../dist/index.js').default;
-
-    if (typeof app !== 'function') {
-        throw new Error(
-            "dist/index.js berhasil di-require tapi tidak meng-export Express app yang valid " +
-            "(export default kosong/bukan function). Cek apakah 'npm run build' benar-benar " +
-            "menghasilkan dist/index.js terbaru sebelum deploy."
-        );
+function boot() {
+    if (app || bootError) return;
+    try {
+        const mod = require('../dist/index.js');
+        app = mod && (mod.default || mod);
+        if (typeof app !== 'function') {
+            throw new Error("dist/index.js dimuat tapi tidak meng-export Express app (cek hasil 'npm run build').");
+        }
+    } catch (error) {
+        bootError = error;
+        console.error('[FATAL] gagal memuat dist/index.js:', (error && error.stack) || error);
     }
-} catch (error) {
-    bootError = error;
-    console.error('[✗] FATAL: gagal memuat dist/index.js saat cold start:', error && error.stack || error);
 }
 
-module.exports = bootError
-    ? (req, res) => {
-        res.status(500).json({
-            status: false,
-            message: 'Server gagal start (cold start crash) — bukan error per-request.',
-            error: {
-                name: bootError.name,
-                message: bootError.message
-            },
-            hint: 'Detail lengkap (stack trace) ada di Vercel Function Logs untuk deployment ini.'
+function sendJson(res, code, body) {
+    res.statusCode = code;
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.end(JSON.stringify(body, null, 2));
+}
+
+module.exports = (req, res) => {
+    /* ===== DIAGNOSA (sementara) ===== */
+    const url = req.url || '';
+    if (url.indexOf('__diag=1') !== -1) {
+        const root = path.join(__dirname, '..');
+        const exists = (p) => { try { return fs.existsSync(p); } catch (e) { return false; } };
+        return sendJson(res, 200, {
+            node: process.version,
+            platform: process.platform,
+            arch: process.arch,
+            cwd: process.cwd(),
+            distIndex: exists(path.join(root, 'dist', 'index.js')),
+            distPublic: exists(path.join(root, 'dist', 'public')),
+            publicDir: exists(path.join(root, 'public')),
+            distConfig: exists(path.join(root, 'dist', 'src', 'config.json')),
+            env: {
+                SUPABASE_URL: !!process.env.SUPABASE_URL,
+                UPSTASH_REDIS_REST_URL: !!process.env.UPSTASH_REDIS_REST_URL
+            }
         });
     }
-    : app;
+    if (url.indexOf('__diag=canvas') !== -1) {
+        try {
+            require('@napi-rs/canvas');
+            return sendJson(res, 200, { canvas: 'OK' });
+        } catch (e) {
+            return sendJson(res, 200, { canvas: 'GAGAL', error: String((e && e.message) || e).slice(0, 600) });
+        }
+    }
+    /* ===== akhir DIAGNOSA ===== */
+
+    boot();
+
+    if (bootError) {
+        return sendJson(res, 500, {
+            status: false,
+            message: 'Server gagal start (cold start crash).',
+            error: { name: bootError.name, message: bootError.message }
+        });
+    }
+
+    try {
+        return app(req, res);
+    } catch (error) {
+        console.error('[FATAL] error saat memproses request:', (error && error.stack) || error);
+        return sendJson(res, 500, {
+            status: false,
+            message: 'Error saat memproses request.',
+            error: { name: error && error.name, message: error && error.message }
+        });
+    }
+};
