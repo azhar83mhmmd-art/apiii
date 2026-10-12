@@ -1,5 +1,5 @@
 /*
- * Kairoo API — Shared Navbar + Footer (Dark Minimal)
+ * Kairoo API — Shared Navbar + Footer (Neo Brutalism)
  *
  * Kenapa di-generate lewat JS, bukan ditulis manual di tiap .html:
  * ada 8+ halaman (beranda, docs, logs, status, feedback, about, privacy,
