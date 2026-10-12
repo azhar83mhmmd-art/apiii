@@ -48,5 +48,8 @@
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.1",
     "typescript": "^5.3.2"
+  },
+  "engines": {
+    "node": "20.x"
   }
 }
