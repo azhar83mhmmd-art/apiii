@@ -12,7 +12,6 @@
     "dev:watch": "nodemon --exec ts-node index.ts"
   },
   "dependencies": {
-    "@file-kiwi/node": "^1.0.0",
     "@napi-rs/canvas": "^0.1.53",
     "@supabase/supabase-js": "^2.45.4",
     "@types/ws": "^8.18.1",
